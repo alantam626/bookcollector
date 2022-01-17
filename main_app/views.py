@@ -1,7 +1,9 @@
+from dataclasses import field
 from datetime import date
 from django.shortcuts import render
 from .models import Book
 from django.http import HttpResponse
+from django.views.generic import CreateView, UpdateView, DeleteView
 
 # class Book:
 #     def __init__(self, name, genre, description, date_published):
@@ -27,3 +29,18 @@ def books_index(request):
     books = Book.objects.all()
     return render(request, 'books/index.html', {'books': books })
 
+def books_detail(request, book_id):
+    book = Book.objects.get(id=book_id)
+    return render(request, 'books/detail.html', { 'book': book })
+
+class BookCreate(CreateView):
+    model = Book
+    fields = '__all__'
+
+class BookUpdate(UpdateView):
+    model = Book
+    fields = ['genre', 'description', 'date_published']
+
+class BookDelete(DeleteView):
+    model = Book
+    success_url = '/books/'
