@@ -1,22 +1,12 @@
 from dataclasses import field
 from datetime import date
-from django.shortcuts import render
-from .models import Book
-from django.http import HttpResponse
+from statistics import mode
+from django.shortcuts import render, redirect
 from django.views.generic import CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView
+from main_app.forms import ReprintForm
+from .models import Book, Author
 
-# class Book:
-#     def __init__(self, name, genre, description, date_published):
-#         self.name = name
-#         self.genre = genre
-#         self.description = description
-#         self.date_published = date_published
-    
-# books = [
-#     Book('The Forever War', 'Science Fiction', 'Story of a soldier who returns home from war. Decades pass between each visit, but it feels like months for him due to time dialation', 1974),
-#     Book('Game of Thrones', 'Fantasy', 'People fight over things', 1996),
-#     Book('The Last Book in the Universe', 'Science Fiction', 'A young boy searches for a future in a dystopic world', 2002),
-# ]
 
 #Define the home view
 def home(request):
@@ -31,7 +21,23 @@ def books_index(request):
 
 def books_detail(request, book_id):
     book = Book.objects.get(id=book_id)
-    return render(request, 'books/detail.html', { 'book': book })
+    authors_book_with_none = Author.objects.exclude(id__in = book.author.all().values_list('id'))
+    reprint_form = ReprintForm()
+    return render(request, 'books/detail.html', { 'book': book, 'reprint_form': reprint_form,
+    'authors': authors_book_with_none 
+    })
+
+def add_reprint(request, book_id):
+    form = ReprintForm(request.POST)
+    if form.is_valid():
+        new_reprint = form.save(commit=False)
+        new_reprint.book_id = book_id
+        new_reprint.save()
+    return redirect('detail', book_id=book_id)
+
+def  assoc_author(request, book_id, author_id):
+    Book.objects.get(id=book_id).author.add(author_id)
+    return redirect('detail', book_id=book_id)
 
 class BookCreate(CreateView):
     model = Book
@@ -44,3 +50,22 @@ class BookUpdate(UpdateView):
 class BookDelete(DeleteView):
     model = Book
     success_url = '/books/'
+
+class AuthorList(ListView):
+    model = Author
+
+class AuthorDetail(DetailView):
+    model = Author
+
+class AuthorCreate(CreateView):
+    model = Author
+    fields = '__all__'
+
+class AuthorUpdate(UpdateView):
+    model = Author
+    fields = ['name']
+
+class AuthorDelete(DeleteView):
+    model = Author
+    success_url = '/authors/'
+
